@@ -30,30 +30,35 @@
             position: relative;
             border: 1px solid #e1e4e8;
             overflow: hidden;
-            min-height: 1050px; /* Estirado para ocupar óptimamente el A4 */
+            min-height: 1050px;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
         }
 
-        /* Marca de agua grande y centrada en el espacio libre inferior */
+        /* Marca de agua grande y centrada */
         .watermark {
             position: absolute;
             bottom: 110px;
             left: 50%;
             transform: translateX(-50%);
-            width: 520px; /* Tamaño mayor para aprovechar el área libre */
+            width: 520px;
             height: auto;
-            opacity: 0.08; /* Perfecta visibilidad sin opacar textos */
+            opacity: 0.08;
             z-index: 0;
             pointer-events: none;
             object-fit: contain;
         }
 
-        /* Asegurar que todo el contenido quede por encima de la marca de agua */
-        .header, .meta-info, .table-responsive, .btn-add, .bottom-section, .notes-section, .footer {
+        .top-action-bar, .header, .meta-info, .table-responsive, .btn-add, .bottom-section, .notes-section, .footer, .bottom-action-bar {
             position: relative;
             z-index: 1;
+        }
+
+        /* Botón superior de Nuevo Presupuesto */
+        .top-action-bar {
+            text-align: right;
+            margin-bottom: 15px;
         }
 
         /* Encabezado */
@@ -90,7 +95,7 @@
         }
 
         .brand-info p {
-            font-size: 11px;
+            font-size: 10.5px;
             font-weight: 600;
             color: #555555;
             margin-top: 3px;
@@ -126,11 +131,11 @@
             color: #e74c3c;
         }
 
-        /* Meta Info del Cliente */
+        /* Meta Info del Cliente (Ajustado para incluir CUIT) */
         .meta-info {
             display: grid;
-            grid-template-columns: 2fr 1fr 2fr;
-            gap: 15px;
+            grid-template-columns: 2fr 1fr 1.5fr 1fr;
+            gap: 12px;
             margin-bottom: 22px;
             font-size: 13px;
             background: #f8f9fa;
@@ -162,7 +167,7 @@
             width: 100% !important;
         }
 
-        /* Tabla de ítems con más relleno */
+        /* Tabla de ítems */
         .table-responsive {
             width: 100%;
             overflow-x: auto;
@@ -303,7 +308,7 @@
             color: #1a252f;
         }
 
-        /* Notas / Observaciones más amplias */
+        /* Notas / Observaciones */
         .notes-section {
             margin-bottom: 22px;
             background: #f8f9fa;
@@ -323,7 +328,7 @@
 
         .editable-notes {
             width: 100%;
-            min-height: 80px; /* Mayor espacio vertical para notas completas */
+            min-height: 80px;
             outline: none;
             font-family: 'Montserrat', sans-serif;
             font-size: 13px;
@@ -354,16 +359,7 @@
             line-height: 1.6;
         }
 
-        /* Botones de acción */
-        .actions-bar {
-            text-align: center;
-            margin-top: 20px;
-            display: flex;
-            justify-content: center;
-            gap: 12px;
-            flex-wrap: wrap;
-        }
-
+        /* Botones de acción generales */
         .btn-action {
             background: #1a252f;
             color: white;
@@ -389,6 +385,11 @@
             background: #1f618d;
         }
 
+        .bottom-action-bar {
+            text-align: center;
+            margin-top: 20px;
+        }
+
         /* Estilos específicos para impresión / PDF */
         @media print {
             @page {
@@ -412,7 +413,7 @@
             .watermark {
                 opacity: 0.08 !important;
             }
-            .actions-bar, .btn-add, .col-accion, th.col-accion {
+            .top-action-bar, .bottom-action-bar, .btn-add, .col-accion, th.col-accion {
                 display: none !important;
             }
             td input, .meta-info input, .editable-desc, .editable-notes {
@@ -426,17 +427,22 @@
 <body>
 
 <div class="container" id="presupuestoContainer">
+    <!-- Botón de Nuevo Presupuesto Arriba -->
+    <div class="top-action-bar">
+        <button class="btn-action btn-new" onclick="nuevoPresupuesto()">+ Nuevo Presupuesto</button>
+    </div>
+
     <!-- Marca de agua grande en el área libre inferior -->
     <img src="marca-agua.png" alt="Marca de agua" class="watermark">
 
-    <!-- Encabezado con logo principal y servicios -->
+    <!-- Encabezado con logo principal y servicios actualizados -->
     <div class="header">
         <div class="brand-section">
             <img src="logo.png" alt="Peti Polarizados Logo" class="logo">
             <div class="brand-info">
                 <h1>PETI POLARIZADOS</h1>
-                <p>Polarizados - Parado de grietas en parabrisas</p>
-                <p>Grabado de Patentes - Plotters - Vinilos - Carteles a Medida</p>
+                <p>Polarizados - Cambio de cristales - Parado de grietas en parabrisas</p>
+                <p>Grabado de Patentes - Ploteos - Vinilos - Carteles a Medida</p>
             </div>
         </div>
         <div class="invoice-details">
@@ -447,19 +453,23 @@
         </div>
     </div>
 
-    <!-- Datos del cliente, fecha y dirección -->
+    <!-- Datos del cliente, CUIT, fecha y dirección -->
     <div class="meta-info">
         <div>
             <strong>Cliente:</strong> 
             <input type="text" id="nombreCliente" placeholder="Nombre / Razón Social">
         </div>
         <div>
-            <strong>Fecha:</strong> 
-            <input type="date" id="fechaPresupuesto">
+            <strong>CUIT:</strong> 
+            <input type="text" id="cuitCliente" placeholder="Sin guiones">
         </div>
         <div>
             <strong>Dirección:</strong> 
-            <input type="text" id="direccionCliente" value="" placeholder="Dirección del cliente...">
+            <input type="text" id="direccionCliente" placeholder="Dirección...">
+        </div>
+        <div>
+            <strong>Fecha:</strong> 
+            <input type="date" id="fechaPresupuesto">
         </div>
     </div>
 
@@ -510,7 +520,7 @@
         </div>
     </div>
 
-    <!-- Notas / Observaciones con más espacio de relleno -->
+    <!-- Notas / Observaciones -->
     <div class="notes-section">
         <label for="notasPresupuesto">Notas / Observaciones:</label>
         <div class="editable-notes" contenteditable="true" id="notasPresupuesto" placeholder="Ej: Tiempos de entrega, aclaraciones, etc."></div>
@@ -530,10 +540,9 @@
     </div>
 </div>
 
-<!-- Botones de Acción -->
-<div class="actions-bar">
+<!-- Botón de Imprimir al Pie -->
+<div class="bottom-action-bar">
     <button class="btn-action" onclick="window.print()">Imprimir / Guardar PDF</button>
-    <button class="btn-action btn-new" onclick="nuevoPresupuesto()">Nuevo Presupuesto</button>
 </div>
 
 <script>
@@ -602,6 +611,7 @@
             actualizarNumeroDisplay();
             
             document.getElementById('nombreCliente').value = '';
+            document.getElementById('cuitCliente').value = '';
             document.getElementById('direccionCliente').value = '';
             document.getElementById('fechaPresupuesto').valueAsDate = new Date();
             document.getElementById('notasPresupuesto').innerText = '';
