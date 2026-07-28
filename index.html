@@ -36,7 +36,6 @@
             justify-content: space-between;
         }
 
-        /* Marca de agua grande y centrada */
         .watermark {
             position: absolute;
             bottom: 110px;
@@ -55,13 +54,11 @@
             z-index: 1;
         }
 
-        /* Botón superior de Nuevo Presupuesto */
         .top-action-bar {
             text-align: right;
             margin-bottom: 15px;
         }
 
-        /* Encabezado */
         .header {
             display: flex;
             justify-content: space-between;
@@ -138,7 +135,6 @@
             background-color: #fde8e7;
         }
 
-        /* Meta Info del Cliente */
         .meta-info {
             display: grid;
             grid-template-columns: 2fr 1fr 1.5fr 1fr;
@@ -174,7 +170,6 @@
             width: 100% !important;
         }
 
-        /* Tabla de ítems */
         .table-responsive {
             width: 100%;
             overflow-x: auto;
@@ -261,7 +256,6 @@
         .btn-add:hover { background: #219653; }
         .btn-delete:hover { background: #962d22; }
 
-        /* Validez y Totales */
         .bottom-section {
             display: flex;
             justify-content: space-between;
@@ -315,7 +309,6 @@
             color: #1a252f;
         }
 
-        /* Notas / Observaciones */
         .notes-section {
             margin-bottom: 22px;
             background: #f8f9fa;
@@ -349,7 +342,6 @@
             line-height: 1.5;
         }
 
-        /* Pie de página */
         .footer {
             border-top: 1px solid #e1e4e8;
             padding-top: 18px;
@@ -366,7 +358,6 @@
             line-height: 1.6;
         }
 
-        /* Botones de acción generales */
         .btn-action {
             background: #1a252f;
             color: white;
@@ -397,7 +388,6 @@
             margin-top: 20px;
         }
 
-        /* Estilos específicos para impresión / PDF */
         @media print {
             @page {
                 size: A4;
@@ -433,19 +423,79 @@
             }
         }
     </style>
+
+    <!-- SDK de Firebase -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyB5Z4Z3HEwwIiEip4F92Q-WXbcV2AYhyyI",
+            authDomain: "peti-presupuestos.firebaseapp.com",
+            projectId: "peti-presupuestos",
+            storageBucket: "peti-presupuestos.firebasestorage.app",
+            messagingSenderId: "163828261205",
+            appId: "1:163828261205:web:e8878c5eaab6033ea98fdc"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        let numeroActual = 1;
+
+        async function cargarNumeroRemoto() {
+            try {
+                const docRef = doc(db, "configuracion", "numeracion");
+                const docSnap = await getDoc(docRef);
+                if (docSnap.exists()) {
+                    numeroActual = docSnap.data().ultimoNumero || 1;
+                } else {
+                    await setDoc(docRef, { ultimoNumero: 1 });
+                    numeroActual = 1;
+                }
+            } catch (e) {
+                console.error("Error cargando número de Firebase:", e);
+                numeroActual = parseInt(localStorage.getItem('peti_presupuestos_presupuesto_num')) || 1;
+            }
+            actualizarNumeroDisplay();
+        }
+
+        window.guardarNumeroRemoto = async function(nuevoValor) {
+            numeroActual = nuevoValor;
+            actualizarNumeroDisplay();
+            try {
+                const docRef = doc(db, "configuracion", "numeracion");
+                await setDoc(docRef, { ultimoNumero: numeroActual });
+            } catch (e) {
+                console.error("Error guardando en Firebase:", e);
+            }
+            localStorage.setItem('peti_polarizados_presupuesto_num', numeroActual);
+        }
+
+        window.incrementarYGuardarRemoto = async function() {
+            numeroActual++;
+            await window.guardarNumeroRemoto(numeroActual);
+        }
+
+        window.cambiarNumeroManual = async function() {
+            let nuevoNum = prompt("Ingrese el número de presupuesto deseado:", numeroActual);
+            if (nuevoNum !== null && !isNaN(nuevoNum) && nuevoNum.trim() !== "") {
+                await window.guardarNumeroRemoto(parseInt(nuevoNum));
+            }
+        }
+
+        cargarNumeroRemoto();
+    </script>
 </head>
 <body>
 
 <div class="container" id="presupuestoContainer">
-    <!-- Botón de Nuevo Presupuesto Arriba -->
     <div class="top-action-bar">
         <button class="btn-action btn-new" onclick="nuevoPresupuesto()">+ Limpiar / Nuevo</button>
     </div>
 
-    <!-- Marca de agua grande en el área libre inferior -->
     <img src="marca-agua.png" alt="Marca de agua" class="watermark">
 
-    <!-- Encabezado con logo principal y servicios actualizados -->
     <div class="header">
         <div class="brand-section">
             <img src="logo.png" alt="Peti Polarizados Logo" class="logo">
@@ -463,7 +513,6 @@
         </div>
     </div>
 
-    <!-- Datos del cliente, CUIT, fecha y dirección -->
     <div class="meta-info">
         <div>
             <strong>Cliente:</strong> 
@@ -483,7 +532,6 @@
         </div>
     </div>
 
-    <!-- Tabla de ítems -->
     <div class="table-responsive">
         <table>
             <thead>
@@ -509,7 +557,6 @@
 
     <button class="btn-add" onclick="agregarFila()">+ Agregar Ítem</button>
 
-    <!-- Validez y Totales -->
     <div class="bottom-section" style="margin-top: 15px;">
         <div class="validity-box">
             <strong>Condiciones:</strong> Presupuesto válido por 10 días. Trabajos con garantía de colocación.
@@ -530,13 +577,11 @@
         </div>
     </div>
 
-    <!-- Notas / Observaciones -->
     <div class="notes-section">
         <label for="notasPresupuesto">Notas / Observaciones:</label>
         <div class="editable-notes" contenteditable="true" id="notasPresupuesto" placeholder="Ej: Tiempos de entrega, aclaraciones, etc."></div>
     </div>
 
-    <!-- Pie de página -->
     <div class="footer">
         <div class="footer-left">
             <strong>PETI POLARIZADOS</strong><br>
@@ -550,7 +595,6 @@
     </div>
 </div>
 
-<!-- Botón de Imprimir al Pie -->
 <div class="bottom-action-bar">
     <button class="btn-action" onclick="imprimirYAvanzar()">Imprimir / Guardar PDF</button>
 </div>
@@ -558,24 +602,10 @@
 <script>
     document.getElementById('fechaPresupuesto').valueAsDate = new Date();
 
-    let numeroActual = localStorage.getItem('peti_polarizados_presupuesto_num');
-    if (!numeroActual) {
-        numeroActual = 1;
-    } else {
-        numeroActual = parseInt(numeroActual);
-    }
-    actualizarNumeroDisplay();
-
     function actualizarNumeroDisplay() {
-        document.getElementById('numeroPresupuesto').innerText = String(numeroActual).padStart(4, '0');
-    }
-
-    function cambiarNumeroManual() {
-        let nuevoNum = prompt("Ingrese el número de presupuesto deseado:", numeroActual);
-        if (nuevoNum !== null && !isNaN(nuevoNum) && nuevoNum.trim() !== "") {
-            numeroActual = parseInt(nuevoNum);
-            localStorage.setItem('peti_polarizados_presupuesto_num', numeroActual);
-            actualizarNumeroDisplay();
+        const numElem = document.getElementById('numeroPresupuesto');
+        if(numElem && window.numeroActual) {
+            numElem.innerText = String(window.numeroActual).padStart(4, '0');
         }
     }
 
@@ -645,14 +675,11 @@
         }
     }
 
-    function imprimirYAvanzar() {
-        // Ejecuta la impresión del navegador
+    async function imprimirYAvanzar() {
         window.print();
-
-        // Al cerrar o terminar la impresión, avanza automáticamente el número
-        numeroActual++;
-        localStorage.setItem('peti_polarizados_presupuesto_num', numeroActual);
-        actualizarNumeroDisplay();
+        if (typeof window.incrementarYGuardarRemoto === 'function') {
+            await window.incrementarYGuardarRemoto();
+        }
     }
 </script>
 
