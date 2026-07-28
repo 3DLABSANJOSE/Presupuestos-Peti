@@ -129,9 +129,16 @@
         .invoice-number-box span {
             font-weight: 800;
             color: #e74c3c;
+            cursor: pointer;
+            border-bottom: 1px dashed #e74c3c;
+            padding: 0 4px;
         }
 
-        /* Meta Info del Cliente (Ajustado para incluir CUIT) */
+        .invoice-number-box span:hover {
+            background-color: #fde8e7;
+        }
+
+        /* Meta Info del Cliente */
         .meta-info {
             display: grid;
             grid-template-columns: 2fr 1fr 1.5fr 1fr;
@@ -421,6 +428,9 @@
                 background: transparent !important;
                 padding: 0 !important;
             }
+            .invoice-number-box span {
+                border-bottom: none !important;
+            }
         }
     </style>
 </head>
@@ -429,7 +439,7 @@
 <div class="container" id="presupuestoContainer">
     <!-- Botón de Nuevo Presupuesto Arriba -->
     <div class="top-action-bar">
-        <button class="btn-action btn-new" onclick="nuevoPresupuesto()">+ Nuevo Presupuesto</button>
+        <button class="btn-action btn-new" onclick="nuevoPresupuesto()">+ Limpiar / Nuevo</button>
     </div>
 
     <!-- Marca de agua grande en el área libre inferior -->
@@ -448,7 +458,7 @@
         <div class="invoice-details">
             <div class="invoice-type">X</div>
             <div class="invoice-number-box">
-                Presupuesto N°: <span id="numeroPresupuesto">0001</span>
+                Presupuesto N°: <span id="numeroPresupuesto" onclick="cambiarNumeroManual()" title="Hacé clic para cambiar el número a mano">0001</span>
             </div>
         </div>
     </div>
@@ -542,7 +552,7 @@
 
 <!-- Botón de Imprimir al Pie -->
 <div class="bottom-action-bar">
-    <button class="btn-action" onclick="window.print()">Imprimir / Guardar PDF</button>
+    <button class="btn-action" onclick="imprimirYAvanzar()">Imprimir / Guardar PDF</button>
 </div>
 
 <script>
@@ -558,6 +568,15 @@
 
     function actualizarNumeroDisplay() {
         document.getElementById('numeroPresupuesto').innerText = String(numeroActual).padStart(4, '0');
+    }
+
+    function cambiarNumeroManual() {
+        let nuevoNum = prompt("Ingrese el número de presupuesto deseado:", numeroActual);
+        if (nuevoNum !== null && !isNaN(nuevoNum) && nuevoNum.trim() !== "") {
+            numeroActual = parseInt(nuevoNum);
+            localStorage.setItem('peti_polarizados_presupuesto_num', numeroActual);
+            actualizarNumeroDisplay();
+        }
     }
 
     function agregarFila() {
@@ -605,11 +624,7 @@
     }
 
     function nuevoPresupuesto() {
-        if (confirm("¿Deseas iniciar un nuevo presupuesto? Se incrementará el número de comprobante.")) {
-            numeroActual++;
-            localStorage.setItem('peti_polarizados_presupuesto_num', numeroActual);
-            actualizarNumeroDisplay();
-            
+        if (confirm("¿Deseas limpiar los datos para iniciar un formulario en blanco? (El número se mantiene)")) {
             document.getElementById('nombreCliente').value = '';
             document.getElementById('cuitCliente').value = '';
             document.getElementById('direccionCliente').value = '';
@@ -628,6 +643,16 @@
             `;
             calcularTotales();
         }
+    }
+
+    function imprimirYAvanzar() {
+        // Ejecuta la impresión del navegador
+        window.print();
+
+        // Al cerrar o terminar la impresión, avanza automáticamente el número
+        numeroActual++;
+        localStorage.setItem('peti_polarizados_presupuesto_num', numeroActual);
+        actualizarNumeroDisplay();
     }
 </script>
 
