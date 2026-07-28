@@ -427,7 +427,7 @@
     <!-- SDK de Firebase -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyB5Z4Z3HEwwIiEip4F92Q-WXbcV2AYhyyI",
@@ -443,38 +443,42 @@
 
         let numeroActual = 1;
 
-        async function cargarNumeroRemoto() {
-            try {
-                const docRef = doc(db, "configuracion", "numeracion");
-                const docSnap = await getDoc(docRef);
-                if (docSnap.exists()) {
-                    numeroActual = docSnap.data().ultimoNumero || 1;
-                } else {
-                    await setDoc(docRef, { ultimoNumero: 1 });
-                    numeroActual = 1;
-                }
-            } catch (e) {
-                console.error("Error cargando número de Firebase:", e);
-                numeroActual = parseInt(localStorage.getItem('peti_presupuestos_presupuesto_num')) || 1;
+        function actualizarNumeroDisplay() {
+            const numElem = document.getElementById('numeroPresupuesto');
+            if(numElem) {
+                numElem.innerText = String(numeroActual).padStart(4, '0');
             }
-            actualizarNumeroDisplay();
         }
+
+        // Escucha en tiempo real: si el celu o la PC cambian el número, se actualiza solo al instante en ambas pantallas
+        const docRef = doc(db, "configuracion", "numeracion");
+        onSnapshot(docRef, (docSnap) => {
+            if (docSnap.exists()) {
+                numeroActual = docSnap.data().ultimoNumero || 1;
+                actualizarNumeroDisplay();
+            } else {
+                setDoc(docRef, { ultimoNumero: 1 });
+            }
+        }, (error) => {
+            console.error("Error en la sincronización:", error);
+            numeroActual = parseInt(localStorage.getItem('peti_presupuestos_num')) || 1;
+            actualizarNumeroDisplay();
+        });
 
         window.guardarNumeroRemoto = async function(nuevoValor) {
             numeroActual = nuevoValor;
             actualizarNumeroDisplay();
             try {
-                const docRef = doc(db, "configuracion", "numeracion");
                 await setDoc(docRef, { ultimoNumero: numeroActual });
             } catch (e) {
                 console.error("Error guardando en Firebase:", e);
             }
-            localStorage.setItem('peti_polarizados_presupuesto_num', numeroActual);
+            localStorage.setItem('peti_presupuestos_num', numeroActual);
         }
 
         window.incrementarYGuardarRemoto = async function() {
-            numeroActual++;
-            await window.guardarNumeroRemoto(numeroActual);
+            let siguiente = numeroActual + 1;
+            await window.guardarNumeroRemoto(siguiente);
         }
 
         window.cambiarNumeroManual = async function() {
@@ -483,8 +487,6 @@
                 await window.guardarNumeroRemoto(parseInt(nuevoNum));
             }
         }
-
-        cargarNumeroRemoto();
     </script>
 </head>
 <body>
@@ -601,13 +603,6 @@
 
 <script>
     document.getElementById('fechaPresupuesto').valueAsDate = new Date();
-
-    function actualizarNumeroDisplay() {
-        const numElem = document.getElementById('numeroPresupuesto');
-        if(numElem && window.numeroActual) {
-            numElem.innerText = String(window.numeroActual).padStart(4, '0');
-        }
-    }
 
     function agregarFila() {
         const tbody = document.getElementById('itemsTable');
