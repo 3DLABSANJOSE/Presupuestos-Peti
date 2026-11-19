@@ -660,4 +660,139 @@
         tr.innerHTML = `
             <td class="col-cant"><input type="number" value="1" min="1" oninput="calcularTotales()"></td>
             <td class="col-desc"><div class="editable-desc" contenteditable="true" data-placeholder="Detalle del trabajo o producto..."></div></td>
-            <td class
+            <td class="col-precio"><input type="number" value="0.00" step="0.01" min="0" oninput="calcularTotales()"></td>
+            <td class="col-sub" style="text-align: right; padding-right: 15px;"><span class="sub-text">$0.00</span></td>
+            <td class="col-accion"><button class="btn-delete" onclick="eliminarFila(this)">X</button></td>
+        `;
+        tbody.appendChild(tr);
+    }
+
+    function eliminarFila(btn) {
+        const tbody = document.getElementById('itemsTable');
+        if (tbody.rows.length > 1) {
+            btn.closest('tr').remove();
+            calcularTotales();
+        } else {
+            alert("El presupuesto debe tener al menos un ítem.");
+        }
+    }
+
+    function calcularTotales() {
+        const rows = document.querySelectorAll('#itemsTable tr');
+        let subtotalGeneral = 0;
+
+        rows.forEach(row => {
+            const cantInput = row.querySelector('.col-cant input');
+            const precioInput = row.querySelector('.col-precio input');
+            const subCell = row.querySelector('.sub-text');
+
+            const cantidad = parseFloat(cantInput.value) || 0;
+            const precioUnitario = parseFloat(precioInput.value) || 0;
+            const subtotal = cantidad * precioUnitario;
+
+            subCell.innerText = '$' + subtotal.toFixed(2);
+            subtotalGeneral += subtotal;
+        });
+
+        document.getElementById('lblSubtotal').innerText = '$' + subtotalGeneral.toFixed(2);
+        document.getElementById('lblTotal').innerText = '$' + subtotalGeneral.toFixed(2);
+    }
+
+    function nuevoPresupuesto() {
+        if (confirm("¿Deseas limpiar los datos para iniciar un formulario en blanco? (El número se mantiene)")) {
+            document.getElementById('nombreCliente').value = '';
+            document.getElementById('cuitCliente').value = '';
+            document.getElementById('direccionCliente').value = '';
+            document.getElementById('fechaPresupuesto').valueAsDate = new Date();
+            document.getElementById('notasPresupuesto').innerText = '';
+            
+            const tbody = document.getElementById('itemsTable');
+            tbody.innerHTML = `
+                <tr>
+                    <td class="col-cant"><input type="number" value="1" min="1" oninput="calcularTotales()"></td>
+                    <td class="col-desc"><div class="editable-desc" contenteditable="true" data-placeholder="Detalle del trabajo o producto..."></div></td>
+                    <td class="col-precio"><input type="number" value="0.00" step="0.01" min="0" oninput="calcularTotales()"></td>
+                    <td class="col-sub" style="text-align: right; padding-right: 15px;"><span class="sub-text">$0.00</span></td>
+                    <td class="col-accion"><button class="btn-delete" onclick="eliminarFila(this)">X</button></td>
+                </tr>
+            `;
+            calcularTotales();
+        }
+    }
+
+    async function imprimirYAvanzar() {
+        window.print();
+        if (typeof window.incrementarYGuardarRemoto === 'function') {
+            await window.incrementarYGuardarRemoto();
+        }
+    }
+
+    async function enviarPDFWhatsApp() {
+        if (typeof html2pdf === 'undefined') {
+            alert("No se pudo cargar el generador de PDF. Probá con 'Imprimir / Guardar PDF'.");
+            return;
+        }
+
+        const num = document.getElementById('numeroPresupuesto').innerText;
+        const cliente = (document.getElementById('nombreCliente').value.trim() || "Cliente").replace(/\s+/g, '_');
+        const nombreArchivo = `Presupuesto_${num}_${cliente}.pdf`;
+        const elemento = document.getElementById('presupuestoContainer');
+
+        window.scrollTo(0, 0);
+        elemento.classList.add('generating-pdf');
+
+        const opciones = {
+            margin: 5,
+            filename: nombreArchivo,
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: {
+                scale: 2,
+                useCORS: true,
+                scrollY: 0,
+                scrollX: 0,
+                windowWidth: 850
+            },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
+
+        try {
+            const pdfBlob = await html2pdf().set(opciones).from(elemento).output('blob');
+            elemento.classList.remove('generating-pdf');
+
+            const archivoPDF = new File([pdfBlob], nombreArchivo, { type: 'application/pdf' });
+
+            if (navigator.canShare && navigator.canShare({ files: [archivoPDF] })) {
+                await navigator.share({
+                    files: [archivoPDF],
+                    title: nombreArchivo
+                });
+
+                if (typeof window.incrementarYGuardarRemoto === 'function') {
+                    await window.incrementarYGuardarRemoto();
+                }
+            } else {
+                const urlDescarga = URL.createObjectURL(pdfBlob);
+                const a = document.createElement('a');
+                a.href = urlDescarga;
+                a.download = nombreArchivo;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                setTimeout(() => URL.revokeObjectURL(urlDescarga), 2000);
+
+                if (typeof window.incrementarYGuardarRemoto === 'function') {
+                    await window.incrementarYGuardarRemoto();
+                }
+            }
+        } catch (err) {
+            elemento.classList.remove('generating-pdf');
+            if (err && err.name !== 'AbortError') {
+                console.error("Error al generar/compartir PDF:", err);
+                alert("Hubo un problema al preparar el PDF.");
+            }
+        }
+    }
+</script>
+
+</body>
+</html>
