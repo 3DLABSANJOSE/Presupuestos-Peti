@@ -407,10 +407,11 @@
         .generating-pdf {
             width: 800px !important;
             max-width: 800px !important;
-            min-height: 1050px !important;
+            min-height: 1120px !important;
             box-shadow: none !important;
             border: none !important;
-            margin: 0 !important;
+            margin: 0 auto !important;
+            padding: 25px 28px !important;
         }
         .generating-pdf .top-action-bar,
         .generating-pdf .btn-add,
@@ -495,6 +496,7 @@
             }
         }
 
+        // Escucha en tiempo real: si el celu o la PC cambian el número, se actualiza solo al instante en ambas pantallas
         const docRef = doc(db, "configuracion", "numeracion");
         onSnapshot(docRef, (docSnap) => {
             if (docSnap.exists()) {
@@ -728,29 +730,35 @@
     }
 
     async function enviarPDFWhatsApp() {
-        if (typeof html2pdf === 'undefined') {
+        if (typeof html2pdf === "undefined") {
             alert("No se pudo cargar el generador de PDF. Probá con 'Imprimir / Guardar PDF'.");
             return;
         }
+
+        if (document.activeElement && typeof document.activeElement.blur === "function") {
+            document.activeElement.blur();
+        }
+        window.scrollTo(0, 0);
 
         const num = document.getElementById('numeroPresupuesto').innerText;
         const cliente = (document.getElementById('nombreCliente').value.trim() || "Cliente").replace(/\s+/g, '_');
         const nombreArchivo = `Presupuesto_${num}_${cliente}.pdf`;
         const elemento = document.getElementById('presupuestoContainer');
 
-        window.scrollTo(0, 0);
         elemento.classList.add('generating-pdf');
+        await new Promise(resolve => setTimeout(resolve, 150));
 
         const opciones = {
-            margin: 5,
+            margin: [8, 8, 8, 8],
             filename: nombreArchivo,
-            image: { type: 'jpeg', quality: 0.98 },
+            image: { type: 'jpeg', quality: 0.96 },
             html2canvas: {
                 scale: 2,
                 useCORS: true,
                 scrollY: 0,
                 scrollX: 0,
-                windowWidth: 850
+                windowWidth: 820,
+                width: 800
             },
             jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
         };
